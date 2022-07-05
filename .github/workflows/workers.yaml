@@ -2,6 +2,11 @@
 
 on:
   workflow_dispatch:
+    inputs:
+      build_service:
+        description: 'Name of a single service to build(in small letters). "all" to build everything'
+        required: false
+        default: 'false'
   push:
     branches:
     - dev
@@ -55,13 +60,26 @@ jobs:
         # Getting the images to build
         #
         set -x
-        {
-          git diff --name-only HEAD HEAD~1 | grep -E "backend/cmd|backend/services" | grep -vE ^ee/ | cut -d '/' -f3
-        
-          git diff --name-only HEAD HEAD~1 | grep -E "backend/pkg|backend/internal" | grep -vE ^ee/ | cut -d '/' -f3 | uniq | while read -r pkg_name ; do
-            grep -rl "pkg/$pkg_name" backend/services backend/cmd | cut -d '/' -f3 
-          done
-        } | uniq > /tmp/images_to_build.txt
+        touch /tmp/images_to_build.txt
+        tmp_param=${{ github.event.inputs.build_service }}
+        build_param=${tmp_param:-'false'}
+        case ${build_param} in
+          false)
+            {
+              git diff --name-only HEAD HEAD~1 | grep -E "backend/cmd|backend/services" | grep -vE ^ee/ | cut -d '/' -f3
+            
+              git diff --name-only HEAD HEAD~1 | grep -E "backend/pkg|backend/internal" | grep -vE ^ee/ | cut -d '/' -f3 | uniq | while read -r pkg_name ; do
+                grep -rl "pkg/$pkg_name" backend/services backend/cmd | cut -d '/' -f3 
+              done
+            } | uniq > /tmp/images_to_build.txt
+          ;;
+          all)
+            ls backend/cmd > /tmp/images_to_build.txt
+            ;;
+          *)
+            echo ${{github.event.inputs.build_service }} > /tmp/images_to_build.txt
+            ;;
+        esac
 
         [[ $(cat /tmp/images_to_build.txt) != "" ]] || (echo "Nothing to build here"; exit 0)
         #
@@ -73,28 +91,6 @@ jobs:
           echo "Bulding $image"
           PUSH_IMAGE=1 bash -x ./build.sh skip $image
           echo "::set-output name=image::$DOCKER_REPO/$image:$IMAGE_TAG"
-        done
-
-    - name: Creating old image input
-      env:
-        IMAGE_TAG: ${{ github.sha }}
-      run: |
-        #
-        # Create yaml with existing image tags
-        #
-        kubectl get pods -n app -o jsonpath="{.items[*].spec.containers[*].image}" |\
-        tr -s '[[:space:]]' '\n' | sort | uniq -c | grep '/foss/' | cut -d '/' -f3 > /tmp/image_tag.txt
-
-        echo > /tmp/image_override.yaml
-
-        for line in `cat /tmp/image_tag.txt`;
-        do
-            image_array=($(echo "$line" | tr ':' '\n'))
-            cat <<EOF >> /tmp/image_override.yaml
-        ${image_array[0]}:
-          image:
-            tag: ${image_array[1]}
-        EOF
         done
 
     - name: Deploying to kuberntes
@@ -112,14 +108,31 @@ jobs:
         sed -i "s/secretKey: \"changeMeMinioPassword\"/secretKey: \"${{ secrets.OSS_MINIO_SECRET_KEY }}\"/g" vars.yaml
         sed -i "s/jwt_secret: \"SetARandomStringHere\"/jwt_secret: \"${{ secrets.OSS_JWT_SECRET }}\"/g" vars.yaml
         sed -i "s/domainName: \"\"/domainName: \"${{ secrets.OSS_DOMAIN_NAME }}\"/g" vars.yaml
+
+        echo > /tmp/image_override.yaml
+        mkdir /tmp/helmcharts
+        mv openreplay/charts/ingress-nginx /tmp/helmcharts/
         ## Update images
         for image in $(cat /tmp/images_to_build.txt);
         do
-            sed -i "/${image}/{n;n;s/.*/    tag: ${IMAGE_TAG}/}" /tmp/image_override.yaml
+        mv openreplay/charts/$image /tmp/helmcharts/
+        cat <<EOF>>/tmp/image_override.yaml
+        ${image}:
+          image:
+            # We've to strip off the -ee, as helm will append it.
+            tag: ${IMAGE_TAG}
+        EOF
         done
+        ls /tmp/helmcharts
+        rm -rf openreplay/charts/*
+        ls openreplay/charts
+        mv /tmp/helmcharts/* openreplay/charts/
+        ls openreplay/charts
+
+        cat /tmp/image_override.yaml
 
         # Deploy command
-        helm upgrade --install openreplay -n app openreplay -f vars.yaml -f /tmp/image_override.yaml
+        helm template openreplay -n app openreplay -f vars.yaml -f /tmp/image_override.yaml --set ingress-nginx.enabled=false --set skipMigration=true | kubectl apply -f -
 
     # - name: Debug Job
     #   if: ${{ failure() }}

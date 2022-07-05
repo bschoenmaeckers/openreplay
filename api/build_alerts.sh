@@ -32,7 +32,7 @@ function make_submodule() {
       cp -R ./chalicelib/utils/{__init__,TimeUTC,pg_client,helper,event_filter_definition,dev,SAML2_helper,email_helper,email_handler,smtp,s3,args_transformer,ch_client,metrics_helper}.py ./alerts/chalicelib/utils/
       # -- end of generated part
     }
-    cp -R ./{Dockerfile.alerts,requirements.txt,.env.default,entrypoint_alerts.sh} ./alerts/
+    cp -R ./{Dockerfile.alerts,requirements.txt,env.default,entrypoint_alerts.sh} ./alerts/
     cp -R ./chalicelib/utils/html ./alerts/chalicelib/utils/html
 }
 
@@ -41,9 +41,8 @@ envarg="default-foss"
 check_prereq() {
     which docker || {
         echo "Docker not installed, please install docker."
-        exit=1
+        exit 1
     }
-    [[ exit -eq 1 ]] && exit 1
 }
 
 function build_api(){

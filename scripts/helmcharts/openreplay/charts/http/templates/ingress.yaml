@@ -5,6 +5,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ $fullName }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "http.labels" . | nindent 4 }}
   annotations:
@@ -35,7 +36,7 @@ spec:
             path: /ingest/(.*)
 {{- end }}
 
-{{- if .Values.global.minio.enabled }}
+{{- if eq .Values.global.s3.endpoint "http://minio.db.svc.cluster.local:9000" }}
 ## TODO:
 ## Frontend service from minio will be migrated to nginx atomic container.
 ## This ingress is just a workaround.

@@ -15,7 +15,7 @@ import ErrorDetailsModal from '../ErrorDetailsModal';
 interface Props {
     error: any;
     className?: string;
-	onClick: () => void;
+	onClick: (e: any) => void;
 }
 function ErrorListItem(props: Props) {
     const { error, className = '' } = props;
@@ -27,7 +27,7 @@ function ErrorListItem(props: Props) {
 	// }
     return (
         <div
-			className={ cn("border p-3 grid grid-cols-12 gap-4 cursor-pointer py-4 hover:bg-active-blue mb-3", className) }
+			className={ cn("p-3 grid grid-cols-12 gap-4 cursor-pointer py-4 hover:bg-active-blue", className) }
 			id="error-item"
 			onClick={props.onClick}
 		>

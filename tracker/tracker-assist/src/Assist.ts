@@ -1,5 +1,5 @@
 import type { Socket } from 'socket.io-client';
-import io from 'socket.io-client';
+import { connect } from 'socket.io-client';
 import Peer from 'peerjs';
 import type { Properties } from 'csstype';
 import { App } from '@openreplay/tracker';
@@ -15,7 +15,7 @@ import type { Options as ConfirmOptions } from './ConfirmWindow/defaults.js';
 // TODO: fully specified  strict check (everywhere)
 
 //@ts-ignore  peerjs hack for webpack5 (?!) TODO: ES/node modules;
-Peer = Peer.default || Peer;
+let PeerHack = Peer.default || Peer;
 
 type StartEndCallback = () => ((()=>{}) | void)
 
@@ -131,13 +131,14 @@ export default class Assist {
     const peerID = `${app.getProjectKey()}-${app.getSessionID()}`
 
     // SocketIO
-    const socket = this.socket = io(app.getHost(), {
+    const socket = this.socket = connect(app.getHost(), {
       path: '/ws-assist/socket',
       query: {
         "peerId": peerID,
         "identity": "session",
         "sessionInfo": JSON.stringify({ 
-          pageTitle: document.title, 
+          pageTitle: document.title,
+          active: true,
           ...this.app.getSessionInfo() 
         }),
       },
@@ -244,7 +245,7 @@ export default class Assist {
     if (this.options.config) {
       peerOptions['config'] = this.options.config
     }
-    const peer = this.peer = new Peer(peerID, peerOptions);
+    const peer = this.peer = new PeerHack(peerID, peerOptions);
     // app.debug.log('Peer created: ', peer)
     peer.on('error', e => app.debug.warn("Peer error: ", e.type, e))
     peer.on('disconnect', () => peer.reconnect())

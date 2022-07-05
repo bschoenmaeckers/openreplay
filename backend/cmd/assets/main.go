@@ -17,10 +17,6 @@ import (
 	"openreplay/backend/pkg/queue/types"
 )
 
-/*
-Assets
-*/
-
 func main() {
 	metrics := monitoring.New("assets")
 
@@ -28,12 +24,7 @@ func main() {
 
 	cfg := config.New()
 
-	cacher := cacher.NewCacher(
-		cfg.AWSRegion,
-		cfg.S3BucketAssets,
-		cfg.AssetsOrigin,
-		cfg.AssetsSizeLimit,
-	)
+	cacher := cacher.NewCacher(cfg, metrics)
 
 	totalAssets, err := metrics.RegisterCounter("assets_total")
 	if err != nil {
@@ -63,6 +54,7 @@ func main() {
 			}
 		},
 		true,
+		cfg.MessageSizeLimit,
 	)
 
 	log.Printf("Cacher service started\n")

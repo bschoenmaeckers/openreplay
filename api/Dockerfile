@@ -4,10 +4,12 @@ LABEL Maintainer="KRAIEM Taha Yassine<tahayk2@gmail.com>"
 ENV APP_NAME chalice
 # Add Tini
 # Startup daemon
-ENV TINI_VERSION v0.19.0
+ENV TINI_VERSION=v0.19.0 \
+    SOURCE_MAP_VERSION=0.7.4
 ARG envarg
 ENV ENTERPRISE_BUILD ${envarg}
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+ADD https://unpkg.com/source-map@${SOURCE_MAP_VERSION}/lib/mappings.wasm /mappings.wasm
 RUN chmod +x /tini
 
 # Installing Nodejs
@@ -25,7 +27,7 @@ RUN cd /work_tmp && npm install
 
 WORKDIR /work
 COPY . .
-RUN mv .env.default .env && mv /work_tmp/node_modules sourcemap-reader/.
+RUN mv env.default .env && mv /work_tmp/node_modules sourcemap-reader/.
 
 ENTRYPOINT ["/tini", "--"]
 CMD ./entrypoint.sh

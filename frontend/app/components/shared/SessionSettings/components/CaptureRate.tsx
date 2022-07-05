@@ -1,35 +1,46 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Icon, Toggler, Button, Input, Loader } from 'UI';
 import { useStore } from 'App/mstore';
-import { useObserver } from 'mobx-react-lite';
+import { observer } from 'mobx-react-lite';
 
-function CaptureRate(props) {
-    const [changed, setChanged] = React.useState(false);
+function CaptureRate() {
     const { settingsStore } = useStore();
-    const sessionSettings = useObserver(() => settingsStore.sessionSettings)
-    const loading = useObserver(() => settingsStore.loadingCaptureRate)
-    const [captureRate, setCaptureRate] = React.useState(sessionSettings.captureRate);
-    const [captureAll, setCaptureAll] = React.useState(sessionSettings.captureAll);
+    const [changed, setChanged] = useState(false);
+    const [sessionSettings] = useState(settingsStore.sessionSettings)
+    const [loading] = useState(settingsStore.loadingCaptureRate)
+
+    const captureRate = sessionSettings.captureRate;
+    const setCaptureRate = sessionSettings.changeCaptureRate
+    const captureAll = sessionSettings.captureAll
+    const setCaptureAll = sessionSettings.changeCaptureAll
 
     useEffect(() => {
-        settingsStore.fetchCaptureRate().then(() => {
-            setCaptureRate(sessionSettings.captureRate);
-            setCaptureAll(sessionSettings.captureAll);
-        });
+        settingsStore.fetchCaptureRate()
     }, [])
 
-    const toggleRate = () => {
-            if (captureAll === false) {
-                settingsStore.saveCaptureRate({ captureAll: true })
-            }
-            setCaptureAll(!captureAll)
-            setChanged(true)
+    const changeCaptureRate = (input: string) => {
+        setChanged(true);
+        setCaptureRate(input);
     }
 
-    return useObserver(() => (
+    const toggleRate = () => {
+        const newValue = !captureAll;
+        setChanged(true)
+        if (newValue === true) { 
+            const updateObj = {
+                rate:"100",
+                captureAll: true,
+            }
+            settingsStore.saveCaptureRate(updateObj)
+        } else {
+            setCaptureAll(newValue);
+        }
+    }
+
+    return (
         <Loader loading={loading}>
             <h3 className="text-lg">Recordings</h3>
-            <div className="my-1">What percentage of user sessions do you want to Capture?</div>
+            <div className="my-1">The percentage of session you want to capture</div>
             <div className="mt-2 mb-4 mr-1 flex items-center">
                 <Toggler
                     checked={captureAll}
@@ -43,15 +54,12 @@ function CaptureRate(props) {
                     <div className="relative">
                         <Input
                             type="number"
-                            value={captureRate}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => changeCaptureRate(e.target.value)}
+                            value={captureRate.toString()}
                             style={{ height: '38px', width: '100px'}}
-                            onChange={(e, { value }) => {
-                                setCaptureRate(value)
-                                setChanged(true);
-                            }}
                             disabled={captureAll}
                             min={0}
-                            minValue={0}
+                            max={100}
                         />
                         <Icon className="absolute right-0 mr-6 top-0 bottom-0 m-auto" name="percent" color="gray-medium" size="18" />
                     </div>
@@ -69,7 +77,7 @@ function CaptureRate(props) {
                 </div>
             )}
         </Loader>
-    ));
+    );
 }
 
-export default CaptureRate;
+export default observer(CaptureRate);

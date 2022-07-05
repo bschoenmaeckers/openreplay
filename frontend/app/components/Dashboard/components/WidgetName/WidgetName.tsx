@@ -34,7 +34,21 @@ function WidgetName(props: Props) {
     setName(props.name)
   }, [props.name])
 
-  // const { name } = props;
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        onBlur()
+      }
+      if (e.key === 'Escape' || e.key === 'Esc') {
+        setEditing(false)
+      }
+    }
+    document.addEventListener('keydown', handler, false)
+
+    return () => {
+      document.removeEventListener('keydown', handler, false)
+    }
+  }, [])
 
   return (
     <div className="flex items-center">

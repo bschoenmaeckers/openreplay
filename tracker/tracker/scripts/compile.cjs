@@ -1,6 +1,6 @@
-import { promises as fs } from 'fs';
-import replaceInFiles from 'replace-in-files';
-import packageConfig from '../package.json' assert { type: 'json' };
+const { promises: fs } = require('fs')
+const replaceInFiles = require('replace-in-files')
+const packageConfig = require('../package.json')
 
 async function main() {
   const webworker = await fs.readFile('build/webworker.js', 'utf8');

@@ -1,6 +1,8 @@
 // @flow
 
 import { DateTime, Duration } from 'luxon'; // TODO
+import { toJS } from 'mobx';
+import { Timezone } from 'MOBX/types/sessionSettings';
 
 export const durationFormatted = (duration: Duration):string => {
   if (duration.as('minutes') < 1) { // show in seconds
@@ -72,14 +74,14 @@ export function formatDateTimeDefault(timestamp: number): string {
 /**
  * Formats timestamps into readable date
  * @param {Number} timestamp
- * @param {String} timezone fixed offset like UTC+6
+ * @param {Object} timezone fixed offset like UTC+6
  * @returns {String} formatted date (or time if its today)
  */
-export function formatTimeOrDate(timestamp: number, timezone: string): string {
+export function formatTimeOrDate(timestamp: number, timezone: Timezone): string {
   var date = DateTime.fromMillis(timestamp)
   if (timezone) {
-    if (timezone === 'UTC') date = date.toUTC();
-    date = date.setZone(timezone)
+    if (timezone.value === 'UTC') date = date.toUTC();
+    date = date.setZone(timezone.value)
   }
 
   return isToday(date) ? date.toFormat('hh:mm a') : date.toFormat('LLL dd, yyyy, hh:mm a');
@@ -125,4 +127,10 @@ export const convertTimestampToUtcTimestamp = (timestamp: number): number => {
 
 export const nowFormatted = (format?: string): string => {
   return DateTime.local().toFormat(format || 'LLL dd, yyyy, hh:mm a');
+}
+
+export const countDaysFrom = (timestamp: number): number => {
+  const date = DateTime.fromMillis(timestamp);
+  const d = new Date();
+  return Math.round(Math.abs(d.getTime() - date.toJSDate().getTime()) / (1000 * 3600 * 24));
 }

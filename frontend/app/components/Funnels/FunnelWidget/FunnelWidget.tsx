@@ -9,11 +9,12 @@ import { useModal } from 'App/components/Modal';
 
 interface Props {
     metric: Widget;
-    isWidget?: boolean
+    isWidget?: boolean;
+    data: any;
 }
 function FunnelWidget(props: Props) {
-    const { metric, isWidget = false } = props;
-    const funnel = metric.data.funnel || { stages: [] };
+    const { metric, isWidget = false, data } = props;
+    const funnel = data.funnel || { stages: [] };
     const totalSteps = funnel.stages.length;
     const stages = isWidget ? [...funnel.stages.slice(0, 1), funnel.stages[funnel.stages.length - 1]] : funnel.stages;
     const hasMoreSteps = funnel.stages.length > 2;
@@ -74,7 +75,6 @@ function FunnelWidget(props: Props) {
                     <span className="text-xl mr-2">Affected users</span>
                     <div className="rounded px-2 py-1 bg-gray-lightest">
                         <span className="text-xl font-medium">{funnel.affectedUsers}</span>
-                        {/* <span className="text-sm">(12%)</span> */}
                     </div>
                 </div>
             </div>
@@ -89,7 +89,7 @@ function EmptyStage({ total }: any) {
             <div className="w-fit px-2 border border-teal py-1 text-center justify-center bg-teal-lightest flex items-center rounded-full color-teal" style={{ width: '100px'}}>
                 {`+${total} ${total > 1 ? 'steps' : 'step'}`}
             </div>
-            <div className="border-b w-full border-dotted"></div>
+            <div className="border-b w-full border-dashed"></div>
         </div>
     ))
 }

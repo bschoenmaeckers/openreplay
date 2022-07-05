@@ -1,17 +1,19 @@
 package integrations
 
-import "openreplay/backend/pkg/env"
+import (
+	"openreplay/backend/internal/config/common"
+	"openreplay/backend/internal/config/configurator"
+)
 
 type Config struct {
-	TopicRawWeb string
-	PostgresURI string
-	TokenSecret string
+	common.Config
+	TopicAnalytics string `env:"TOPIC_ANALYTICS,required"`
+	PostgresURI    string `env:"POSTGRES_STRING,required"`
+	TokenSecret    string `env:"TOKEN_SECRET,required"`
 }
 
 func New() *Config {
-	return &Config{
-		TopicRawWeb: env.String("TOPIC_RAW_WEB"),
-		PostgresURI: env.String("POSTGRES_STRING"),
-		TokenSecret: env.String("TOKEN_SECRET"),
-	}
+	cfg := &Config{}
+	configurator.Process(cfg)
+	return cfg
 }

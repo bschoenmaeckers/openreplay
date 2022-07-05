@@ -42,9 +42,9 @@ interface Props {
     userDeviceType: string;
     userUuid: string;
     userNumericHash: number;
-    live: boolean
+    live: boolean;
     metadata: Record<string, any>;
-    userSessionsCount: number
+    userSessionsCount: number;
     issueTypes: [];
     active: boolean;
   },
@@ -57,7 +57,7 @@ interface Props {
   live?: boolean;
 }
 
-function SessionItem(props: RouteComponentProps<Props>) {
+function SessionItem(props: RouteComponentProps & Props) {
   const { settingsStore } = useStore();
   const { timezone } = settingsStore.sessionSettings;
 
@@ -109,13 +109,13 @@ function SessionItem(props: RouteComponentProps<Props>) {
         <div className="flex items-start">
           <div className={ cn('flex items-center w-full')}>
             <div className="flex items-center pr-2" style={{ width: "30%"}}>
-              <div><Avatar seed={ userNumericHash } isAssist={isAssist} /></div>
+              <div><Avatar isActive={active} seed={ userNumericHash } isAssist={isAssist} /></div>
               <div className="flex flex-col overflow-hidden color-gray-medium ml-3 justify-between items-center">
                 <div
                   className={cn('text-lg', {'color-teal cursor-pointer': !disableUser && hasUserId, [stl.userName]: !disableUser && hasUserId, 'color-gray-medium' : disableUser || !hasUserId})}
                   onClick={() => (!disableUser && !hasUserFilter) && onUserClick(userId, userAnonymousId)}
                 >
-                  <TextEllipsis text={userDisplayName} maxWidth="200" popupProps={{ inverted: true, size: 'tiny' }} />
+                  <TextEllipsis text={userDisplayName} maxWidth="200px" popupProps={{ inverted: true, size: 'tiny' }} />
                 </div>
               </div>
             </div>

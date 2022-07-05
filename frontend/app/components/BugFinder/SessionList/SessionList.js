@@ -83,8 +83,6 @@ export default class SessionList extends React.PureComponent {
     const {
       loading,
       filters,
-      // onMenuItemClick,
-      // allList,
       activeTab,
       metaList,
       currentPage,
@@ -113,9 +111,8 @@ export default class SessionList extends React.PureComponent {
           
             <Loader loading={ loading }>
               { list.map(session => (
-                <>
+                <React.Fragment key={ session.sessionId }>
                 <SessionItem
-                  key={ session.sessionId }
                   session={ session }
                   hasUserFilter={hasUserFilter}
                   onUserClick={this.onUserClick}
@@ -123,7 +120,7 @@ export default class SessionList extends React.PureComponent {
                   lastPlayedSessionId={lastPlayedSessionId}
                 />
                 <div className="border-b" />
-                </>
+                </React.Fragment>
               ))}
             </Loader>
             <div className="w-full flex items-center justify-center py-6">

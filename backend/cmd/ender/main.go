@@ -20,10 +20,7 @@ import (
 	"openreplay/backend/pkg/queue/types"
 )
 
-/*
-Ender
-*/
-
+//
 func main() {
 	metrics := monitoring.New("ender")
 
@@ -32,7 +29,7 @@ func main() {
 	// Load service configuration
 	cfg := ender.New()
 
-	pg := cache.NewPGCache(postgres.NewConn(cfg.Postgres, 0, 0), cfg.ProjectExpirationTimeoutMs)
+	pg := cache.NewPGCache(postgres.NewConn(cfg.Postgres, 0, 0, metrics), cfg.ProjectExpirationTimeoutMs)
 	defer pg.Close()
 
 	// Init all modules
@@ -42,7 +39,7 @@ func main() {
 		log.Printf("can't init ender service: %s", err)
 		return
 	}
-	producer := queue.NewProducer()
+	producer := queue.NewProducer(cfg.MessageSizeLimit)
 	consumer := queue.NewMessageConsumer(
 		cfg.GroupEnder,
 		[]string{
@@ -50,7 +47,7 @@ func main() {
 		},
 		func(sessionID uint64, msg messages.Message, meta *types.Meta) {
 			switch msg.(type) {
-			case *messages.SessionStart, *messages.SessionEnd, *messages.RawErrorEvent:
+			case *messages.SessionStart, *messages.SessionEnd:
 				// Skip several message types
 				return
 			}
@@ -62,6 +59,7 @@ func main() {
 			sessions.UpdateSession(sessionID, meta.Timestamp, msg.Meta().Timestamp)
 		},
 		false,
+		cfg.MessageSizeLimit,
 	)
 
 	log.Printf("Ender service started\n")
@@ -85,7 +83,7 @@ func main() {
 			sessions.HandleEndedSessions(func(sessionID uint64, timestamp int64) bool {
 				msg := &messages.SessionEnd{Timestamp: uint64(timestamp)}
 				if err := pg.InsertSessionEnd(sessionID, msg.Timestamp); err != nil {
-					log.Printf("can't save sessionEnd to database, sessID: %d", sessionID)
+					log.Printf("can't save sessionEnd to database, sessID: %d, err: %s", sessionID, err)
 					return false
 				}
 				if err := producer.Produce(cfg.TopicRawWeb, sessionID, messages.Encode(msg)); err != nil {

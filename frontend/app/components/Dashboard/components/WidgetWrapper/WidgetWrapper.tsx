@@ -3,7 +3,7 @@ import cn from 'classnames';
 import { ItemMenu, Popup } from 'UI';
 import { useDrag, useDrop } from 'react-dnd';
 import WidgetChart from '../WidgetChart';
-import { useObserver } from 'mobx-react-lite';
+import { observer } from 'mobx-react-lite';
 import { useStore } from 'App/mstore';
 import { withRouter, RouteComponentProps } from 'react-router-dom';
 import { withSiteId, dashboardMetricDetails } from 'App/routes';
@@ -29,10 +29,10 @@ interface Props {
 function WidgetWrapper(props: Props & RouteComponentProps) {
     const { dashboardStore } = useStore();
     const { isWidget = false, active = false, index = 0, moveListItem = null, isPreview = false, isTemplate = false, dashboardId, siteId } = props;
-    const widget: any = useObserver(() => props.widget);
+    const widget: any = props.widget;
     const isTimeSeries = widget.metricType === 'timeseries';
     const isPredefined = widget.metricType === 'predefined';
-    const dashboard = useObserver(() => dashboardStore.selectedDashboard);
+    const dashboard = dashboardStore.selectedDashboard;
 
     const [{ isDragging }, dragRef] = useDrag({
         type: 'item',
@@ -69,7 +69,7 @@ function WidgetWrapper(props: Props & RouteComponentProps) {
     const dragDropRef: any = dragRef(dropRef(ref))
     const addOverlay = isTemplate || (!isPredefined && isWidget && widget.metricOf !== FilterKey.ERRORS && widget.metricOf !== FilterKey.SESSIONS)
 
-    return useObserver(() => (
+    return (
             <div
                 className={
                     cn(
@@ -88,13 +88,13 @@ function WidgetWrapper(props: Props & RouteComponentProps) {
                 onClick={props.onClick ? props.onClick : () => {}}
                 id={`widget-${widget.widgetId}`}
             >
-                {!isTemplate && isWidget &&
+                {!isTemplate && isWidget && isPredefined &&
                     <div
                         className={cn(
                             stl.drillDownMessage,
                             'disabled text-gray text-sm invisible group-hover:visible')}
                         >
-                            {isPredefined ? 'Cannot drill down system provided metrics' : 'Click to drill down'}
+                            {'Cannot drill down system provided metrics'}
                     </div>
                 }
                 {/* @ts-ignore */}
@@ -149,8 +149,8 @@ function WidgetWrapper(props: Props & RouteComponentProps) {
                 </Popup>
             </div>
 
-    ));
+    );
 }
 
 
-export default withRouter(WidgetWrapper);
+export default withRouter(observer(WidgetWrapper));

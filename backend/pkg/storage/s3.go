@@ -2,6 +2,8 @@ package storage
 
 import (
 	"io"
+	"net/url"
+	"os"
 	"sort"
 	"strconv"
 
@@ -15,6 +17,7 @@ type S3 struct {
 	uploader *s3manager.Uploader
 	svc      *_s3.S3
 	bucket   *string
+	fileTag  string
 }
 
 func NewS3(region string, bucket string) *S3 {
@@ -23,6 +26,7 @@ func NewS3(region string, bucket string) *S3 {
 		uploader: s3manager.NewUploader(sess),
 		svc:      _s3.New(sess), // AWS Docs: "These clients are safe to use concurrently."
 		bucket:   &bucket,
+		fileTag:  loadFileTag(),
 	}
 }
 
@@ -40,6 +44,7 @@ func (s3 *S3) Upload(reader io.Reader, key string, contentType string, gzipped b
 		ContentType:     &contentType,
 		CacheControl:    &cacheControl,
 		ContentEncoding: contentEncoding,
+		Tagging:         &s3.fileTag,
 	})
 	return err
 }
@@ -94,4 +99,17 @@ func (s3 *S3) GetFrequentlyUsedKeys(projectID uint64) ([]string, error) {
 		keyList = append(keyList, (*obj.Key)[s:])
 	}
 	return keyList, nil
+}
+
+func loadFileTag() string {
+	// Load file tag from env
+	key := "retention"
+	value := os.Getenv("RETENTION")
+	if value == "" {
+		value = "default"
+	}
+	// Create URL encoded tag set for file
+	params := url.Values{}
+	params.Add(key, value)
+	return params.Encode()
 }
