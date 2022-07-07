@@ -28,7 +28,7 @@ const initialState = Map({
 function reducer(state = initialState, action = {}) {
 	switch (action.type) {
     case APPLY:
-      return state.mergeIn(['instance'], action.filter).set('currentPage', 1);
+      return state.mergeIn(['instance'], action.filter);
     case EDIT:
       return state.mergeIn(['instance'], action.instance).set('currentPage', 1);
     case UPDATE_CURRENT_PAGE:
@@ -59,6 +59,7 @@ export default mergeReducers(
 	createRequestReducer({
 		fetch: FETCH,
     fetchList: FETCH_SESSION_LIST,
+    fetchFilterSearch: FETCH_FILTER_SEARCH
 	}),
 );
 

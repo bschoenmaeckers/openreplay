@@ -6,11 +6,12 @@ import { useStore } from 'App/mstore';
 import { useObserver } from 'mobx-react-lite';
 import Select from 'Shared/Select';
 import SelectDateRange from 'Shared/SelectDateRange';
+import { numberWithCommas } from 'App/utils';
 
 function AuditView(props) {
     const { auditStore } = useStore();
     const order = useObserver(() => auditStore.order);
-    const total = useObserver(() => auditStore.total);
+    const total = useObserver(() => numberWithCommas(auditStore.total));
 
     const exportToCsv = () => {
         auditStore.exportToCsv();
@@ -34,6 +35,7 @@ function AuditView(props) {
                         <SelectDateRange
                             period={auditStore.period}
                             onChange={onChange}
+                            right={true}
                         />
                     </div>
                     <div className="mx-2">

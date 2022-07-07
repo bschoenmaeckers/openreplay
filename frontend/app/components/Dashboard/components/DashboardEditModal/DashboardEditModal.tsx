@@ -29,7 +29,7 @@ function DashboardEditModal(props: Props) {
     const write = ({ target: { value, name } }) => dashboard.update({ [ name ]: value })
 
     return useObserver(() => (
-        <Modal open={ show }>
+        <Modal open={ show } onClose={closeHandler}>
             <Modal.Header className="flex items-center justify-between">
                 <div>{ 'Edit Dashboard' }</div>
                 <Icon
@@ -61,6 +61,7 @@ function DashboardEditModal(props: Props) {
                     <label>{'Description:'}</label>
                     <Input
                         className=""
+                        type="textarea"
                         name="description"
                         value={ dashboard.description }
                         onChange={write}

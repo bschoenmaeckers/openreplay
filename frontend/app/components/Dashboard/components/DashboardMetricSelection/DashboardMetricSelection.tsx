@@ -4,6 +4,7 @@ import { useObserver } from 'mobx-react-lite';
 import { Icon } from 'UI';
 import cn from 'classnames';
 import { useStore } from 'App/mstore';
+import { Loader } from 'UI';
 
 function WidgetCategoryItem({ category, isSelected, onClick, selectedWidgetIds }) {
     const selectedCategoryWidgetsCount = useObserver(() => {
@@ -11,7 +12,7 @@ function WidgetCategoryItem({ category, isSelected, onClick, selectedWidgetIds }
     });
     return (
         <div
-            className={cn("rounded p-4 border cursor-pointer", { 'bg-active-blue border-blue':isSelected, 'bg-white': !isSelected })}
+            className={cn("rounded p-4 border cursor-pointer hover:bg-active-blue", { 'bg-active-blue border-blue':isSelected, 'bg-white': !isSelected })}
             onClick={() => onClick(category)}
         >
             <div className="font-medium text-lg mb-2 capitalize">{category.name}</div>
@@ -32,16 +33,24 @@ interface IProps {
 
 function DashboardMetricSelection(props: IProps) {
     const { dashboardStore } = useStore();
-    const widgetCategories: any[] = useObserver(() => dashboardStore.widgetCategories);
+    let widgetCategories: any[] = useObserver(() => dashboardStore.widgetCategories);
+    const loadingTemplates = useObserver(() => dashboardStore.loadingTemplates);
     const [activeCategory, setActiveCategory] = React.useState<any>();
     const [selectAllCheck, setSelectAllCheck] = React.useState(false);
     const selectedWidgetIds = useObserver(() => dashboardStore.selectedWidgets.map((widget: any) => widget.metricId));
+    const scrollContainer = React.useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         dashboardStore?.fetchTemplates(true).then((categories) => {
             setActiveCategory(categories[0]);
         });
     }, []);
+
+    useEffect(() => {
+        if (scrollContainer.current) {
+            scrollContainer.current.scrollTop = 0;
+        }
+    }, [activeCategory, scrollContainer.current]);
 
     const handleWidgetCategoryClick = (category: any) => {
         setActiveCategory(category);
@@ -58,7 +67,7 @@ function DashboardMetricSelection(props: IProps) {
     }
 
     return useObserver(() => (
-        <div>
+        <Loader loading={loadingTemplates}>
             <div className="grid grid-cols-12 gap-4 my-3 items-end">
                 <div className="col-span-3">
                     <div className="uppercase color-gray-medium text-lg">Type</div>
@@ -100,6 +109,7 @@ function DashboardMetricSelection(props: IProps) {
                     <div
                         className="grid grid-cols-4 gap-4 -mx-4 px-4 pb-40 items-start py-1"
                         style={{ maxHeight: "calc(100vh - 170px)", overflowY: 'auto' }}
+                        ref={scrollContainer}
                     >
                         {activeCategory && activeCategory.widgets.map((widget: any) => (
                             <WidgetWrapper
@@ -129,7 +139,7 @@ function DashboardMetricSelection(props: IProps) {
                     </div>
                 </div>
             </div>
-        </div>
+        </Loader>
     ));
 }
 

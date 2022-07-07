@@ -22,7 +22,7 @@ export const getMatchingEntries = (searchQuery: string, filters: Record<string, 
         const filtersQuery = filters[name]
         .filter(filterOption => filterOption.label.toLocaleLowerCase().includes(searchQuery))
 
-        matchingFilters[name] = filtersQuery
+        if (filtersQuery.length > 0) matchingFilters[name] = filtersQuery
         filtersQuery.length > 0 && matchingCategories.push(name);
       }
   })
@@ -42,14 +42,12 @@ interface Props {
 function FilterModal(props: Props) {
   const {
     filters,
-    metaOptions,
     onFilterClick = () => null,
     filterSearchList,
     isMainSearch = false,
     fetchingFilterSearchList,
     searchQuery = '',
   } = props;
-  const hasSearchQuery = searchQuery && searchQuery.length > 0;
   const showSearchList = isMainSearch && searchQuery.length > 0;
 
   const onFilterSearchClick = (filter: any) => {
@@ -61,8 +59,9 @@ function FilterModal(props: Props) {
   const { matchingCategories, matchingFilters } = getMatchingEntries(searchQuery, filters);
 
   const isResultEmpty = (!filterSearchList || Object.keys(filterSearchList).length === 0)
-    && matchingCategories.length === 0 && matchingFilters.length === 0
+    && matchingCategories.length === 0 && Object.keys(matchingFilters).length === 0
 
+    // console.log(matchingFilters)
   return (
     <div className={stl.wrapper} style={{ width: '480px', maxHeight: '380px', overflowY: 'auto'}}>
       <div className={searchQuery && !isResultEmpty ? 'mb-6' : ''} style={{ columns: "auto 200px" }}>
@@ -71,7 +70,7 @@ function FilterModal(props: Props) {
               <div className="mb-6" key={key}>
                 <div className="uppercase font-medium mb-1 color-gray-medium tracking-widest text-sm">{key}</div>
                 <div>
-                  {matchingFilters[key].map((filter: any) => (
+                  {matchingFilters[key] && matchingFilters[key].map((filter: any) => (
                       <div key={filter.label} className={cn(stl.optionItem, "flex items-center py-2 cursor-pointer -mx-2 px-2")} onClick={() => onFilterClick({ ...filter, value: [''] })}>
                         <Icon name={filter.icon} size="16"/>
                         <span className="ml-2">{filter.label}</span>
@@ -122,9 +121,15 @@ function FilterModal(props: Props) {
   );
 }
 
-export default connect(state => ({
-  // filters: state.getIn([ 'search', 'filterListLive' ]),
-  filterSearchList: state.getIn([ 'search', 'filterSearchList' ]),
-  metaOptions: state.getIn([ 'customFields', 'list' ]),
-  fetchingFilterSearchList: state.getIn([ 'search', 'fetchFilterSearch', 'loading' ]),
-}))(FilterModal);
+export default connect((state: any, props: any) => {
+  return ({
+    filters: props.isLive ? state.getIn([ 'search', 'filterListLive' ]) : state.getIn([ 'search', 'filterList' ]),
+    filterSearchList: props.isLive ? state.getIn([ 'liveSearch', 'filterSearchList' ]) : state.getIn([ 'search', 'filterSearchList' ]),
+    // filterSearchList: state.getIn([ 'search', 'filterSearchList' ]),
+    // liveFilterSearchList: state.getIn([ 'liveSearch', 'filterSearchList' ]),
+    metaOptions: state.getIn([ 'customFields', 'list' ]),
+    fetchingFilterSearchList: props.isLive
+            ? state.getIn(['liveSearch', 'fetchFilterSearch', 'loading'])
+            : state.getIn(['search', 'fetchFilterSearch', 'loading']),
+  })
+})(FilterModal);

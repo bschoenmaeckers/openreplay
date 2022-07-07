@@ -177,20 +177,6 @@ def get_projects(context: schemas.CurrentContext = Depends(OR_context)):
     return {"data": projects.get_projects(tenant_id=context.tenant_id, recording_state=True, gdpr=True, recorded=True,
                                           stack_integrations=True, user_id=context.user_id)}
 
-
-@app.get('/limits', tags=['accounts'])
-def get_limits(context: schemas.CurrentContext = Depends(OR_context)):
-    return {
-        'data': {
-            "limits": {
-                "teamMember": -1,
-                "projects": -1,
-                "metadata": metadata.get_remaining_metadata_with_count(context.tenant_id)
-            }
-        }
-    }
-
-
 @app.post('/{projectId}/sessions/search2', tags=["sessions"])
 def sessions_search2(projectId: int, data: schemas.FlatSessionsSearchPayloadSchema = Body(...),
                      context: schemas.CurrentContext = Depends(OR_context)):

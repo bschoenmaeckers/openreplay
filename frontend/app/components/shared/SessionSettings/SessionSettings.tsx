@@ -1,13 +1,12 @@
 import React from 'react';
-import { useObserver } from 'mobx-react-lite';
 import ListingVisibility from './components/ListingVisibility';
 import DefaultPlaying from './components/DefaultPlaying';
 import DefaultTimezone from './components/DefaultTimezone';
 import CaptureRate from './components/CaptureRate';
 
 function SessionSettings() {
-    return useObserver(() => (
-        <div className="bg-white box-shadow h-screen" style={{ width: '450px'}}>
+    return (
+        <div className="bg-white box-shadow h-screen overflow-y-auto" style={{ width: '450px'}}>
             <div className="px-6 pt-6">
                 <h1 className="text-2xl">Sessions Settings</h1>
             </div>
@@ -28,7 +27,7 @@ function SessionSettings() {
                 <CaptureRate />
             </div>
         </div>
-    ));
+    );
 }
 
-export default SessionSettings;
+export default SessionSettings

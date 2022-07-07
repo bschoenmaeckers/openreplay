@@ -7,6 +7,8 @@ export default class SettingsStore {
     loadingCaptureRate: boolean = false;
     sessionSettings: SessionSettings = new SessionSettings()
     captureRateFetched: boolean = false;
+    limits: any = null;
+
     constructor() {
         makeAutoObservable(this, {
             sessionSettings: observable,
@@ -15,7 +17,8 @@ export default class SettingsStore {
 
     saveCaptureRate(data: any) {
         return sessionService.saveCaptureRate(data)
-            .then(data => {
+            .then(data => data.json())
+            .then(({ data }) => {
                 this.sessionSettings.merge({
                     captureRate: data.rate,
                     captureAll: data.captureAll

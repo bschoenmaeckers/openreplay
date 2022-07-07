@@ -1,30 +1,20 @@
 package messages
 
 import (
-	"fmt"
-	"io"
-	"strings"
-
 	"github.com/pkg/errors"
+	"io"
 )
 
 func ReadBatchReader(reader io.Reader, messageHandler func(Message)) error {
 	var index uint64
 	var timestamp int64
+
 	for {
 		msg, err := ReadMessage(reader)
 		if err == io.EOF {
 			return nil
 		} else if err != nil {
-			if strings.HasPrefix(err.Error(), "Unknown message code:") {
-				code := strings.TrimPrefix(err.Error(), "Unknown message code: ")
-				msg, err = DecodeExtraMessage(code, reader)
-				if err != nil {
-					return fmt.Errorf("can't decode msg: %s", err)
-				}
-			} else {
-				return errors.Wrapf(err, "Batch Message decoding error on message with index %v", index)
-			}
+			return errors.Wrapf(err, "Batch Message decoding error on message with index %v", index)
 		}
 		msg = transformDeprecated(msg)
 
@@ -51,7 +41,8 @@ func ReadBatchReader(reader io.Reader, messageHandler func(Message)) error {
 			// No skipping here for making it easy to encode back the same sequence of message
 			// continue readLoop
 		case *SessionStart:
-			// Save session start timestamp for collecting "empty" sessions
+			timestamp = int64(m.Timestamp)
+		case *SessionEnd:
 			timestamp = int64(m.Timestamp)
 		}
 		msg.Meta().Index = index

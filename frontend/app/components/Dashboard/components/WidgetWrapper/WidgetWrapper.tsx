@@ -3,13 +3,14 @@ import cn from 'classnames';
 import { ItemMenu, Popup } from 'UI';
 import { useDrag, useDrop } from 'react-dnd';
 import WidgetChart from '../WidgetChart';
-import { useObserver } from 'mobx-react-lite';
+import { observer } from 'mobx-react-lite';
 import { useStore } from 'App/mstore';
-import { withRouter } from 'react-router-dom';
+import { withRouter, RouteComponentProps } from 'react-router-dom';
 import { withSiteId, dashboardMetricDetails } from 'App/routes';
 import TemplateOverlay from './TemplateOverlay';
 import AlertButton from './AlertButton';
 import stl from './widgetWrapper.module.css';
+import { FilterKey } from 'App/types/filter/filterType';
 
 interface Props {
     className?: string;
@@ -25,12 +26,13 @@ interface Props {
     onClick?: () => void;
     isWidget?: boolean;
 }
-function WidgetWrapper(props: Props) {
+function WidgetWrapper(props: Props & RouteComponentProps) {
     const { dashboardStore } = useStore();
     const { isWidget = false, active = false, index = 0, moveListItem = null, isPreview = false, isTemplate = false, dashboardId, siteId } = props;
-    const widget: any = useObserver(() => props.widget);
+    const widget: any = props.widget;
+    const isTimeSeries = widget.metricType === 'timeseries';
     const isPredefined = widget.metricType === 'predefined';
-    const dashboard = useObserver(() => dashboardStore.selectedDashboard);
+    const dashboard = dashboardStore.selectedDashboard;
 
     const [{ isDragging }, dragRef] = useDrag({
         type: 'item',
@@ -65,10 +67,9 @@ function WidgetWrapper(props: Props) {
 
     const ref: any = useRef(null)
     const dragDropRef: any = dragRef(dropRef(ref))
+    const addOverlay = isTemplate || (!isPredefined && isWidget && widget.metricOf !== FilterKey.ERRORS && widget.metricOf !== FilterKey.SESSIONS)
 
-    const addOverlay = isTemplate || (!isPredefined && isWidget)
-
-    return useObserver(() => (
+    return (
             <div
                 className={
                     cn(
@@ -87,13 +88,13 @@ function WidgetWrapper(props: Props) {
                 onClick={props.onClick ? props.onClick : () => {}}
                 id={`widget-${widget.widgetId}`}
             >
-                {!isTemplate && isWidget &&
+                {!isTemplate && isWidget && isPredefined &&
                     <div
                         className={cn(
                             stl.drillDownMessage,
                             'disabled text-gray text-sm invisible group-hover:visible')}
                         >
-                            {isPredefined ? 'Cannot drill down system provided metrics' : 'Click to drill down'}
+                            {'Cannot drill down system provided metrics'}
                     </div>
                 }
                 {/* @ts-ignore */}
@@ -111,10 +112,10 @@ function WidgetWrapper(props: Props) {
                     <div
                         className={cn("p-3 pb-4 flex items-center justify-between", { "cursor-move" : !isTemplate && isWidget })}
                     >
-                        <div className="capitalize w-full font-medium">{widget.name}</div>
+                        <div className="capitalize-first w-full font-medium">{widget.name}</div>
                         {isWidget && (
                             <div className="flex items-center" id="no-print">
-                                {!isPredefined && (
+                                {!isPredefined && isTimeSeries && (
                                     <>
                                         <AlertButton seriesId={widget.series[0] && widget.series[0].seriesId} />
                                         <div className='mx-2'/>
@@ -148,8 +149,8 @@ function WidgetWrapper(props: Props) {
                 </Popup>
             </div>
 
-    ));
+    );
 }
 
 
-export default withRouter(WidgetWrapper);
+export default withRouter(observer(WidgetWrapper));

@@ -83,8 +83,6 @@ export default class SessionList extends React.PureComponent {
     const {
       loading,
       filters,
-      // onMenuItemClick,
-      // allList,
       activeTab,
       metaList,
       currentPage,
@@ -95,42 +93,47 @@ export default class SessionList extends React.PureComponent {
     const hasUserFilter = _filterKeys.includes(FilterKey.USERID) || _filterKeys.includes(FilterKey.USERANONYMOUSID);
 
     return (
-      <NoContent
-        title={<div className="flex items-center justify-center flex-col">
-          <AnimatedSVG name={ICONS.NO_RESULTS} size="170" />
-          {this.getNoContentMessage(activeTab)}
-        </div>}
-        // subtext="Please try changing your search parameters."
-        // animatedIcon="no-results"
-        show={ !loading && list.size === 0}
-        subtext={
-          <div>
-            <div>Please try changing your search parameters.</div>
-          </div>
-        }
-      >
-        <Loader loading={ loading }>
-          { list.map(session => (
-            <SessionItem
-              key={ session.sessionId }
-              session={ session }
-              hasUserFilter={hasUserFilter}
-              onUserClick={this.onUserClick}
-              metaList={metaList}
-              lastPlayedSessionId={lastPlayedSessionId}
-            />
-          ))}
-        </Loader>
-        <div className="w-full flex items-center justify-center py-6">
-          <Pagination
-            page={currentPage}
-            totalPages={Math.ceil(total / PER_PAGE)}
-            onPageChange={(page) => this.props.updateCurrentPage(page)}
-            limit={PER_PAGE}
-            debounceRequest={1000}
-          />
+      <div className="bg-white p-3 rounded border">
+        <NoContent
+          title={<div className="flex items-center justify-center flex-col">
+            <AnimatedSVG name={ICONS.NO_RESULTS} size="170" />
+            {this.getNoContentMessage(activeTab)}
+          </div>}
+          // subtext="Please try changing your search parameters."
+          // animatedIcon="no-results"
+          show={ !loading && list.size === 0}
+          subtext={
+            <div>
+              <div>Please try changing your search parameters.</div>
+            </div>
+          }
+        >
+          
+            <Loader loading={ loading }>
+              { list.map(session => (
+                <React.Fragment key={ session.sessionId }>
+                <SessionItem
+                  session={ session }
+                  hasUserFilter={hasUserFilter}
+                  onUserClick={this.onUserClick}
+                  metaList={metaList}
+                  lastPlayedSessionId={lastPlayedSessionId}
+                />
+                <div className="border-b" />
+                </React.Fragment>
+              ))}
+            </Loader>
+            <div className="w-full flex items-center justify-center py-6">
+              <Pagination
+                page={currentPage}
+                totalPages={Math.ceil(total / PER_PAGE)}
+                onPageChange={(page) => this.props.updateCurrentPage(page)}
+                limit={PER_PAGE}
+                debounceRequest={1000}
+              />
+            </div>
+          </NoContent>
         </div>
-      </NoContent>
     );
   }
 

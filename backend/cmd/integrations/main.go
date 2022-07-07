@@ -4,6 +4,7 @@ import (
 	"log"
 	config "openreplay/backend/internal/config/integrations"
 	"openreplay/backend/internal/integrations/clientManager"
+	"openreplay/backend/pkg/monitoring"
 	"time"
 
 	"os"
@@ -17,16 +18,15 @@ import (
 	"openreplay/backend/pkg/token"
 )
 
-/*
-Integrations
-*/
-
+//
 func main() {
+	metrics := monitoring.New("integrations")
+
 	log.SetFlags(log.LstdFlags | log.LUTC | log.Llongfile)
 
 	cfg := config.New()
 
-	pg := postgres.NewConn(cfg.PostgresURI)
+	pg := postgres.NewConn(cfg.PostgresURI, 0, 0, metrics)
 	defer pg.Close()
 
 	tokenizer := token.NewTokenizer(cfg.TokenSecret)
@@ -46,7 +46,7 @@ func main() {
 		}
 	})
 
-	producer := queue.NewProducer()
+	producer := queue.NewProducer(cfg.MessageSizeLimit, true)
 	defer producer.Close(15000)
 
 	listener, err := postgres.NewIntegrationsListener(cfg.PostgresURI)
@@ -74,7 +74,7 @@ func main() {
 			log.Printf("Requesting all...\n")
 			manager.RequestAll()
 		case event := <-manager.Events:
-			log.Printf("New integration event: %+v\n", *event.RawErrorEvent)
+			log.Printf("New integration event: %+v\n", *event.IntegrationEvent)
 			sessionID := event.SessionID
 			if sessionID == 0 {
 				sessData, err := tokenizer.Parse(event.Token)
@@ -84,8 +84,7 @@ func main() {
 				}
 				sessionID = sessData.ID
 			}
-			// TODO: send to ready-events topic. Otherwise it have to go through the events worker.
-			producer.Produce(cfg.TopicRawWeb, sessionID, messages.Encode(event.RawErrorEvent))
+			producer.Produce(cfg.TopicAnalytics, sessionID, messages.Encode(event.IntegrationEvent))
 		case err := <-manager.Errors:
 			log.Printf("Integration error: %v\n", err)
 		case i := <-manager.RequestDataUpdates:

@@ -28,6 +28,13 @@ export default class NewSiteForm extends React.PureComponent {
 		existsError: false,
 	}
 
+	componentDidMount() {
+		const { location: { pathname }, match: { params: { siteId } } } = this.props;
+		if (pathname.includes('onboarding')) {
+			this.props.setSiteId(siteId);
+		}
+	}
+
 	onSubmit = e => {
 		e.preventDefault();
 		const { site, siteList, location: { pathname } } = this.props;
@@ -74,7 +81,7 @@ export default class NewSiteForm extends React.PureComponent {
 	render() {
 		const { site, loading } = this.props;
 		return (
-			<Form className={ styles.formWrapper } onSubmit={ this.onSubmit }>
+			<Form className={ styles.formWrapper } onSubmit={ site.validate() && this.onSubmit }>
         		<div className={ styles.content }>
 					<Form.Field>
 						<label>{ 'Name' }</label>
@@ -92,6 +99,7 @@ export default class NewSiteForm extends React.PureComponent {
 							type="submit"							
 							className="float-left mr-2"
 							loading={ loading }
+							disabled={ !site.validate() }
 						>
 							{site.exists() ? 'Update' : 'Add'}
 						</Button>

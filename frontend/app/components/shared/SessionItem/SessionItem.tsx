@@ -5,6 +5,7 @@ import {
   Avatar,
   TextEllipsis,
   Label,
+  Icon,
 } from 'UI';
 import { useStore } from 'App/mstore';
 import { observer } from 'mobx-react-lite';
@@ -41,9 +42,9 @@ interface Props {
     userDeviceType: string;
     userUuid: string;
     userNumericHash: number;
-    live: boolean
+    live: boolean;
     metadata: Record<string, any>;
-    userSessionsCount: number
+    userSessionsCount: number;
     issueTypes: [];
     active: boolean;
   },
@@ -56,7 +57,7 @@ interface Props {
   live?: boolean;
 }
 
-function SessionItem(props: RouteComponentProps<Props>) {
+function SessionItem(props: RouteComponentProps & Props) {
   const { settingsStore } = useStore();
   const { timezone } = settingsStore.sessionSettings;
 
@@ -104,46 +105,48 @@ function SessionItem(props: RouteComponentProps<Props>) {
   });
 
   return (
-    <div className={ cn(stl.sessionItem, "flex flex-col p-3 mb-3") } id="session-item" >
+    <div className={ cn(stl.sessionItem, "flex flex-col p-2") } id="session-item" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start">
           <div className={ cn('flex items-center w-full')}>
             <div className="flex items-center pr-2" style={{ width: "30%"}}>
-              <div><Avatar seed={ userNumericHash } isAssist={isAssist} /></div>
-              <div className="flex flex-col overflow-hidden color-gray-medium ml-3 justify-between items-center">
+              <div><Avatar isActive={active} seed={ userNumericHash } isAssist={isAssist} /></div>
+              <div className="flex flex-col overflow-hidden color-gray-medium ml-3 justify-between items-center shrink-0">
                 <div
                   className={cn('text-lg', {'color-teal cursor-pointer': !disableUser && hasUserId, [stl.userName]: !disableUser && hasUserId, 'color-gray-medium' : disableUser || !hasUserId})}
                   onClick={() => (!disableUser && !hasUserFilter) && onUserClick(userId, userAnonymousId)}
                 >
-                  <TextEllipsis text={userDisplayName} maxWidth={200} popupProps={{ inverted: true, size: 'tiny' }} />
+                  <TextEllipsis text={userDisplayName} maxWidth="200px" popupProps={{ inverted: true, size: 'tiny' }} />
                 </div>
               </div>
             </div>
-            <div style={{ width: "20%" }} className="px-2 flex flex-col justify-between">
+            <div style={{ width: "30%" }} className="px-2 flex flex-col justify-between">
               <div>{formatTimeOrDate(startedAt, timezone) }</div>
-              <div className="flex items-center color-gray-medium">
+              <div className="flex items-center color-gray-medium py-1">
                 {!isAssist && (
                     <>
                       <div className="color-gray-medium">
                         <span className="mr-1">{ eventsCount }</span>
                         <span>{ eventsCount === 0 || eventsCount > 1 ? 'Events' : 'Event' }</span>
                       </div>
-                      <div className="mx-2 text-4xl">·</div>
+                      <Icon name="circle-fill" size={3} className="mx-4" />
                     </>
                 )}
                 <div>{ live ? <Counter startTime={startedAt} /> : formattedDuration }</div>
               </div>
             </div>
             <div style={{ width: "30%" }} className="px-2 flex flex-col justify-between">
-              <div style={{ height: '21px'}}><CountryFlag country={ userCountry } style={{ paddingTop: '4px' }} label /></div>
-              <div className="color-gray-medium flex items-center">
+              <div style={{ height: '21px'}}>
+                <CountryFlag country={ userCountry } style={{ paddingTop: '4px' }} label />
+              </div>
+              <div className="color-gray-medium flex items-center py-1">
                 <span className="capitalize" style={{ maxWidth: '70px'}}>
                   <TextEllipsis text={ capitalize(userBrowser) } popupProps={{ inverted: true, size: "tiny" }} />
                 </span>
-                <div className="mx-2 text-4xl">·</div>
+                <Icon name="circle-fill" size={3} className="mx-4" />
                 <span className="capitalize" style={{ maxWidth: '70px'}}>
                   <TextEllipsis text={ capitalize(userOs) } popupProps={{ inverted: true, size: "tiny" }} />
                 </span>
-                <div className="mx-2 text-4xl">·</div>
+                <Icon name="circle-fill" size={3} className="mx-4" />
                 <span className="capitalize" style={{ maxWidth: '70px'}}>
                   <TextEllipsis text={ capitalize(userDeviceType) } popupProps={{ inverted: true, size: "tiny" }} />
                 </span>

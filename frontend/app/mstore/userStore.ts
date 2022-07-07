@@ -14,6 +14,8 @@ export default class UserStore {
 
     loading: boolean = false;
     saving: boolean = false;
+    limits: any = {};
+    initialDataFetched: boolean = false;
 
     constructor() {
         makeAutoObservable(this, {
@@ -22,6 +24,18 @@ export default class UserStore {
             updateKey: action,
             initUser: action,
         })
+    }
+
+    fetchLimits(): Promise<any> {
+        return new Promise((resolve, reject) => {
+            userService.getLimits()
+                .then((response: any) => {
+                    this.limits = response;
+                    resolve(response);
+                }).catch((error: any) => {
+                    reject(error);
+                });
+        });
     }
 
     initUser(user?: any ): Promise<void> {
@@ -99,6 +113,7 @@ export default class UserStore {
                     resolve(response);
                 }).catch(error => {
                     this.saving = false;
+                    toast.error('Error saving user');
                     reject(error);
                 }).finally(() => {
                     this.saving = false;
@@ -116,6 +131,7 @@ export default class UserStore {
                     resolve(response);
                 }).catch(error => {
                     this.saving = false;
+                    toast.error('Error deleting user');
                     reject(error);
                 }).finally(() => {
                     this.saving = false;

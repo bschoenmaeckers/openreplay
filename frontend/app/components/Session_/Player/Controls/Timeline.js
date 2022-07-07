@@ -1,10 +1,9 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import cn from 'classnames';
-import { connectPlayer } from 'Player';
-import { Popup, TimelinePointer, Icon } from 'UI';
+import { connectPlayer, Controls } from 'Player';
+import { TimelinePointer, Icon } from 'UI';
 import TimeTracker from './TimeTracker';
-import { ReduxTime } from './Time';
 import stl from './timeline.module.css';
 import { TYPES } from 'Types/session/event';
 import { setTimelinePointer } from 'Duck/sessions';
@@ -64,7 +63,8 @@ let deboucneJump = () => null;
   skipIntervals: state.skipIntervals,
   events: state.eventList,
   skip: state.skip,
-  skipToIssue: state.skipToIssue,
+  // not updating properly rn
+  // skipToIssue: state.skipToIssue,
   disabled: state.cssLoading || state.messagesLoading || state.markedTargets,
   endTime: state.endTime,
   live: state.live,
@@ -100,7 +100,8 @@ export default class Timeline extends React.PureComponent {
   }
 
   componentDidMount() {
-    const { issues, skipToIssue } = this.props;
+    const { issues } = this.props;
+    const skipToIssue = Controls.updateSkipToIssue();
     const firstIssue = issues.get(0);
     deboucneJump = debounce(this.props.jump, 500);
 
@@ -109,7 +110,7 @@ export default class Timeline extends React.PureComponent {
     }
   }
 
-  onDragEnd = (item, monitor) => {
+  onDragEnd = () => {
     if (this.wasPlaying) {
       this.props.togglePlay();
     }
@@ -149,12 +150,13 @@ export default class Timeline extends React.PureComponent {
     return (
       <div
         className="flex items-center absolute w-full"
-        style={{ top: '-5px', zIndex: 100, padding: `0 ${BOUNDRY}px`}}
+        style={{ top: '-4px', zIndex: 100, padding: `0 ${BOUNDRY}px`}}
       >
         <div
           className={ stl.progress }
           onClick={ disabled ? null : this.seekProgress }
           ref={ this.progressRef }
+          role="button"
         >
             <DraggableCircle left={this.props.time * scale} onDrop={this.onDragEnd} />
             <CustomDragLayer onDrag={this.onDrag} minX={BOUNDRY} maxX={this.progressRef.current && this.progressRef.current.offsetWidth + BOUNDRY} />
@@ -199,7 +201,7 @@ export default class Timeline extends React.PureComponent {
                       </div>
                     }
                   >
-                    <Icon className=" p-px bg-white" name={iss.icon} size="16" />
+                    <Icon className=" rounded-full bg-white" name={iss.icon} size="16" />
                   </Tooltip>
                 </div>
               ))
@@ -224,7 +226,7 @@ export default class Timeline extends React.PureComponent {
                     </div>
                   }
                 >
-                  <Icon className=" p-px bg-white" name={getPointerIcon('click_rage')} size="16" />
+                  <Icon className="bg-white" name={getPointerIcon('click_rage')} size="16" />
                 </Tooltip>
               </div>
             ))}
@@ -246,7 +248,7 @@ export default class Timeline extends React.PureComponent {
                     </div>
                   }
                 >
-                  <Icon className=" p-px bg-white" name={getPointerIcon('click_rage')} size="16" />
+                  <Icon className=" rounded-full bg-white" name={getPointerIcon('click_rage')} size="16" />
                 </Tooltip>
               </div>
             }
@@ -269,7 +271,7 @@ export default class Timeline extends React.PureComponent {
                       </div>
                   }
                   >
-                    <Icon className=" p-px bg-white" name={getPointerIcon('exception')} size="16" />
+                    <Icon className=" rounded-full bg-white" name={getPointerIcon('exception')} size="16" />
                   </Tooltip>
                 </div>
               ))
@@ -297,7 +299,7 @@ export default class Timeline extends React.PureComponent {
                       </div>
                   }
                   >
-                    <Icon className=" p-px bg-white" name={getPointerIcon('resource')} size="16" />
+                    <Icon className=" rounded-full bg-white" name={getPointerIcon('resource')} size="16" />
                   </Tooltip>
                 </div>
               ))

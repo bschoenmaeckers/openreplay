@@ -27,9 +27,10 @@ interface Props {
 function WidgetChart(props: Props) {
     const { isWidget = false, metric, isTemplate } = props;
     const { dashboardStore, metricStore } = useStore();
-    const _metric: any = useObserver(() => metricStore.instance);
+    const _metric: any = metricStore.instance;
     const period = useObserver(() => dashboardStore.period);
-    const drillDownFilter = useObserver(() => dashboardStore.drillDownFilter);
+    const drillDownPeriod = useObserver(() => dashboardStore.drillDownPeriod);
+    const drillDownFilter = dashboardStore.drillDownFilter;
     const colors = Styles.customMetricColors;
     const [loading, setLoading] = useState(true)
     const isOverviewWidget = metric.metricType === 'predefined' && metric.viewType === 'overview';
@@ -41,21 +42,20 @@ function WidgetChart(props: Props) {
 
     const isTableWidget = metric.metricType === 'table' && metric.viewType === 'table';
     const isPieChart = metric.metricType === 'table' && metric.viewType === 'pieChart';
-    const isFunnel = metric.metricType === 'funnel';
 
     const onChartClick = (event: any) => {
         if (event) {
-            if (isTableWidget || isPieChart) {
+            if (isTableWidget || isPieChart) { // get the filter of clicked row
                 const periodTimestamps = period.toTimestamps()
                 drillDownFilter.merge({
                     filters: event,
                     startTimestamp: periodTimestamps.startTimestamp,
                     endTimestamp: periodTimestamps.endTimestamp,
                 });
-            } else {
+            } else { // get the filter of clicked chart point
                 const payload = event.activePayload[0].payload;
                 const timestamp = payload.timestamp;
-                const periodTimestamps = getStartAndEndTimestampsByDensity(timestamp, period.start, period.end, params.density);
+                const periodTimestamps = getStartAndEndTimestampsByDensity(timestamp, drillDownPeriod.start, drillDownPeriod.end, params.density);
 
                 drillDownFilter.merge({
                     startTimestamp: periodTimestamps.startTimestamp,
@@ -66,11 +66,10 @@ function WidgetChart(props: Props) {
     }
 
     const depsString = JSON.stringify(_metric.series);
-
-    const fetchMetricChartData = (metric: any, payload: any, isWidget: any) => {
+    const fetchMetricChartData = (metric: any, payload: any, isWidget: any, period: any) => {
         if (!isMounted()) return;
         setLoading(true)
-        dashboardStore.fetchMetricChartData(metric, payload, isWidget).then((res: any) => {
+        dashboardStore.fetchMetricChartData(metric, payload, isWidget, period).then((res: any) => {
             if (isMounted()) setData(res);
         }).finally(() => {
             setLoading(false);
@@ -84,23 +83,26 @@ function WidgetChart(props: Props) {
           return
         };
         prevMetricRef.current = metric;
-        const payload = isWidget ? { ...params } : { ...metricParams, ...metric.toJson() };
-        debounceRequest(metric, payload, isWidget);
-    }, [period, depsString, _metric.page, metric.metricType, metric.metricOf, metric.viewType]);
+        const timestmaps = drillDownPeriod.toTimestamps();
+        const payload = isWidget ? { ...params } : { ...metricParams, ...timestmaps, ...metric.toJson() };
+        debounceRequest(metric, payload, isWidget, !isWidget ? drillDownPeriod : period);
+    }, [drillDownPeriod, period, depsString, _metric.page, metric.metricType, metric.metricOf, metric.viewType]);
+
 
     const renderChart = () => {
         const { metricType, viewType, metricOf } = metric;
 
+        const metricWithData = { ...metric, data };
         if (metricType === 'sessions') {
-            return <SessionWidget metric={metric} />
+            return <SessionWidget metric={metric} data={data} />
         }
 
         if (metricType === 'errors') {
-            return <ErrorsWidget metric={metric} />
+            return <ErrorsWidget metric={metric} data={data} />
         }
 
         if (metricType === 'funnel') {
-            return <FunnelWidget metric={metric} />
+            return <FunnelWidget metric={metric} data={data} isWidget={isWidget || isTemplate} />
         }
 
         if (metricType === 'predefined') {
@@ -136,6 +138,7 @@ function WidgetChart(props: Props) {
                 return (
                     <CustomMetricTableSessions
                         metric={metric}
+                        data={data}
                         isTemplate={isTemplate}
                         isEdit={!isWidget && !isTemplate}
                     />
@@ -145,7 +148,8 @@ function WidgetChart(props: Props) {
                 return (
                     <CustomMetricTableErrors
                         metric={metric}
-                        isTemplate={isTemplate}
+                        data={data}
+                        // isTemplate={isTemplate}
                         isEdit={!isWidget && !isTemplate}
                     />
                 )
@@ -164,7 +168,7 @@ function WidgetChart(props: Props) {
                         metric={metric}
                         data={data[0]}
                         colors={colors}
-                        params={params}
+                        // params={params}
                         onClick={onChartClick}
                     />
                 )
@@ -173,11 +177,11 @@ function WidgetChart(props: Props) {
 
         return <div>Unknown</div>;
     }
-    return useObserver(() => (
+    return (
         <Loader loading={loading} style={{ height: `${isOverviewWidget ? 100 : 240}px` }}>
             {renderChart()}
         </Loader>
-    ));
+    );
 }
 
 export default observer(WidgetChart);

@@ -3,6 +3,7 @@ package kafka
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 	"openreplay/backend/pkg/env"
@@ -12,19 +13,24 @@ type Producer struct {
 	producer *kafka.Producer
 }
 
-func NewProducer() *Producer {
-	protocol := "plaintext"
-	if env.Bool("KAFKA_USE_SSL") {
-		protocol = "ssl"
-	}
-	producer, err := kafka.NewProducer(&kafka.ConfigMap{
-		"enable.idempotence":     true, // TODO: get rid of
+func NewProducer(messageSizeLimit int, useBatch bool) *Producer {
+	kafkaConfig := &kafka.ConfigMap{
+		"enable.idempotence":     true,
 		"bootstrap.servers":      env.String("KAFKA_SERVERS"),
 		"go.delivery.reports":    true,
-		"security.protocol":      protocol,
-		"go.batch.producer":      true,
+		"security.protocol":      "plaintext",
+		"go.batch.producer":      useBatch,
 		"queue.buffering.max.ms": 100,
-	})
+		"message.max.bytes":      messageSizeLimit,
+	}
+	// Apply ssl configuration
+	if env.Bool("KAFKA_USE_SSL") {
+		kafkaConfig.SetKey("security.protocol", "ssl")
+		kafkaConfig.SetKey("ssl.ca.location", os.Getenv("KAFKA_SSL_CA"))
+		kafkaConfig.SetKey("ssl.key.location", os.Getenv("KAFKA_SSL_KEY"))
+		kafkaConfig.SetKey("ssl.certificate.location", os.Getenv("KAFKA_SSL_CERT"))
+	}
+	producer, err := kafka.NewProducer(kafkaConfig)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -61,5 +67,3 @@ func (p *Producer) Close(timeoutMs int) {
 func (p *Producer) Flush(timeoutMs int) {
 	p.producer.Flush(timeoutMs)
 }
-
-// MBTODO: GetFatalError check

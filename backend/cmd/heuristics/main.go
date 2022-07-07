@@ -4,8 +4,6 @@ import (
 	"log"
 	"openreplay/backend/internal/config/heuristics"
 	"openreplay/backend/pkg/handlers"
-	"openreplay/backend/pkg/handlers/custom"
-	ios2 "openreplay/backend/pkg/handlers/ios"
 	web2 "openreplay/backend/pkg/handlers/web"
 	"openreplay/backend/pkg/intervals"
 	logger "openreplay/backend/pkg/log"
@@ -18,10 +16,6 @@ import (
 	"syscall"
 	"time"
 )
-
-/*
-Heuristics
-*/
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.LUTC | log.Llongfile)
@@ -39,12 +33,12 @@ func main() {
 			&web2.MemoryIssueDetector{},
 			&web2.NetworkIssueDetector{},
 			&web2.PerformanceAggregator{},
-			// iOS handlers
-			&ios2.AppNotResponding{},
-			&ios2.ClickRageDetector{},
-			&ios2.PerformanceAggregator{},
+			// iOS's handlers
+			//&ios2.AppNotResponding{},
+			//&ios2.ClickRageDetector{},
+			//&ios2.PerformanceAggregator{},
 			// Other handlers (you can add your custom handlers here)
-			&custom.CustomHandler{},
+			//&custom.CustomHandler{},
 		}
 	}
 
@@ -55,7 +49,7 @@ func main() {
 	statsLogger := logger.NewQueueStats(cfg.LoggerTimeout)
 
 	// Init producer and consumer for data bus
-	producer := queue.NewProducer()
+	producer := queue.NewProducer(cfg.MessageSizeLimit, true)
 	consumer := queue.NewMessageConsumer(
 		cfg.GroupHeuristics,
 		[]string{
@@ -66,6 +60,7 @@ func main() {
 			builderMap.HandleMessage(sessionID, msg, msg.Meta().Index)
 		},
 		false,
+		cfg.MessageSizeLimit,
 	)
 
 	log.Printf("Heuristics service started\n")

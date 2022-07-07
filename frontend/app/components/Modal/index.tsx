@@ -6,6 +6,7 @@ const ModalContext = createContext({
   component: null,
   props: {
     right: false,
+    onClose: () => {},
   },
   showModal: (component: any, props: any) => {},
   hideModal: () => {}
@@ -19,20 +20,26 @@ export class ModalProvider extends Component {
     }
   }
 
-  showModal = (component, props = {}) => {
+  showModal = (component, props = { }) => {
     this.setState({
       component,
       props
     });
     document.addEventListener('keydown', this.handleKeyDown);
+    document.querySelector("body").style.overflow = 'hidden';
   };
 
   hideModal = () => {
+    document.removeEventListener('keydown', this.handleKeyDown);
+    document.querySelector("body").style.overflow = 'visible';
+    const { props } = this.state;
+    if (props.onClose) {
+      props.onClose();
+    };
     this.setState({
       component: null,
       props: {}
     });
-    document.removeEventListener('keydown', this.handleKeyDown);
   }
 
   state = {
@@ -45,7 +52,7 @@ export class ModalProvider extends Component {
   render() {
     return (
       <ModalContext.Provider value={this.state}>
-        <Modal />
+        <Modal {...this.state} />
         {this.props.children}
       </ModalContext.Provider>
     );

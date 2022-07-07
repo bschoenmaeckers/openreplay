@@ -2,7 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { setSiteId } from 'Duck/site';
 import { withRouter } from 'react-router-dom';
-import { hasSiteId, siteChangeAvaliable } from 'App/routes';
+import { hasSiteId, siteChangeAvaliable, isRoute } from 'App/routes';
 import { STATUS_COLOR_MAP, GREEN } from 'Types/site';
 import { Icon, SlideModal } from 'UI';
 import { pushNewSite } from 'Duck/user'
@@ -14,6 +14,7 @@ import { clearSearch } from 'Duck/search';
 import { fetchList as fetchIntegrationVariables } from 'Duck/customField';
 import { withStore } from 'App/mstore'
 import AnimatedSVG, { ICONS } from '../shared/AnimatedSVG/AnimatedSVG';
+import NewProjectButton from './NewProjectButton';
 
 @withStore
 @withRouter
@@ -41,10 +42,10 @@ export default class SiteDropdown extends React.PureComponent {
   }
 
   switchSite = (siteId) => {
-    const { mstore } = this.props
+    const { mstore, location } = this.props
 
     this.props.setSiteId(siteId);
-    this.props.clearSearch();
+    this.props.clearSearch(location.pathname.includes('/sessions'));
     this.props.fetchIntegrationVariables();
 
     mstore.initClient();
@@ -57,10 +58,8 @@ export default class SiteDropdown extends React.PureComponent {
     const activeSite = sites.find(s => s.id == siteId);
     const disabled = !siteChangeAvaliable(pathname);
     const showCurrent = hasSiteId(pathname) || siteChangeAvaliable(pathname);
-    const canAddSites = isAdmin && account.limits.projects && account.limits.projects.remaining !== 0;
-  
-    // const signslGreenSvg = <object data={SignalGreenSvg} type="image/svg+xml" className={styles.signalGreen} />
-    // const signslRedSvg = <object data={SignalRedSvg} type="image/svg+xml" className={styles.signalRed} />
+    // const canAddSites = isAdmin && account.limits.projects && account.limits.projects.remaining !== 0;
+
     return (
       <div className={ styles.wrapper }>
         {
@@ -87,18 +86,7 @@ export default class SiteDropdown extends React.PureComponent {
               ))
             }
           </ul>
-          <div
-            className={cn(styles.btnNew, 'flex items-center justify-center py-3 cursor-pointer', { [styles.disabled] : !canAddSites })}
-            onClick={this.newSite}
-          >
-            <Icon 
-              name="plus"
-              size="12"
-              marginRight="5" 
-              color="teal"
-            /> 
-            <span className="color-teal">Add New Project</span>
-          </div>
+          <NewProjectButton onClick={this.newSite} isAdmin={isAdmin} />
         </div>
 
         <SlideModal

@@ -1,7 +1,8 @@
 import { makeAutoObservable, runInAction, observable, action, reaction, computed } from "mobx"
 import Widget, { IWidget } from "./types/widget";
-import { metricService } from "App/services";
+import { metricService, errorService } from "App/services";
 import { toast } from 'react-toastify';
+import Error from "./types/error";
 
 export interface IMetricStore {
     paginatedList: any;
@@ -29,12 +30,13 @@ export interface IMetricStore {
     updateInList(metric: IWidget): void
     findById(metricId: string): void
     removeById(metricId: string): void
+    fetchError(errorId: string): Promise<any>
 
     // API
     save(metric: IWidget, dashboardId?: string): Promise<any>
     fetchList(): void
-    fetch(metricId: string)
-    delete(metric: IWidget)
+    fetch(metricId: string, period?: any): Promise<any>
+    delete(metric: IWidget): Promise<any>
 }
 
 export default class MetricStore implements IMetricStore {
@@ -76,23 +78,14 @@ export default class MetricStore implements IMetricStore {
             fetch: action,
             delete: action,
 
+            fetchError: action,
+
             paginatedList: computed,
         })
-
-        // reaction(
-        //     () => this.metricsSearch,
-        //     (metricsSearch) => { // TODO filter the list for View
-        //         this.page = 1
-        //         this.paginatedList
-        //     }
-        // )
     }
 
     // State Actions
     init(metric?: IWidget|null) {
-        // const _metric = new Widget().fromJson(sampleJsonErrors)
-        // this.instance.update(metric || _metric)
-
         this.instance.update(metric || new Widget())
     }
 
@@ -102,6 +95,7 @@ export default class MetricStore implements IMetricStore {
 
     merge(object: any) {
         Object.assign(this.instance, object)
+        this.instance.updateKey('hasChanged', true)
     }
 
     reset(id: string) {
@@ -157,6 +151,7 @@ export default class MetricStore implements IMetricStore {
                     toast.error('Error saving metric')
                     reject()
                 }).finally(() => {
+                    this.instance.updateKey('hasChanged', false)
                     this.isSaving = false
                 })
         })
@@ -172,12 +167,13 @@ export default class MetricStore implements IMetricStore {
             })
     }
 
-    fetch(id: string) {
+    fetch(id: string, period?: any) {
         this.isLoading = true
         return metricService.getMetric(id)
             .then((metric: any) => {
-                return this.instance = new Widget().fromJson(metric)
-            }).finally(() => {
+                return this.instance = new Widget().fromJson(metric, period)
+            })
+            .finally(() => {
                 this.isLoading = false
             })
     }
@@ -189,46 +185,19 @@ export default class MetricStore implements IMetricStore {
                 this.removeById(metric[Widget.ID_KEY])
                 toast.success('Metric deleted successfully')
             }).finally(() => {
+                this.instance.updateKey('hasChanged', false)
                 this.isSaving = false
             })
     }
-}
 
-const sampleJsonFunnel = {
-    // metricId: 1,
-    name: "Funnel Sample",
-    metricType: 'funnel',
-    series: [
-        {
-            name: 'Series 1',
-            filter: {
-                eventsOrder: 'then',
-                filters: [
-                    { type: 'LOCATION', operator: 'is', value: ['/sessions', '/errors', '/users'], percent: 100, completed: 60, dropped: 40, },
-                    { type: 'LOCATION', operator: 'is', value: ['/sessions'], percent: 80, completed: 40, dropped: 60, },
-                    { type: 'CLICK', operator: 'on', value: ['DASHBOARDS'], percent: 80, completed: 10, dropped: 90, }
-                ]
-            }
-        }
-    ],
-}
-
-const sampleJsonErrors = {
-    // metricId: 1,
-    name: "Errors Sample",
-    metricType: 'errors',
-    metricFormat: 'sessionCount',
-    series: [
-        {
-            name: 'Series 1',
-            filter: {
-                eventsOrder: 'then',
-                filters: [
-                    { type: 'LOCATION', operator: 'is', value: ['/sessions', '/errors', '/users'], percent: 100, completed: 60, dropped: 40, },
-                    { type: 'LOCATION', operator: 'is', value: ['/sessions'], percent: 80, completed: 40, dropped: 60, },
-                    { type: 'CLICK', operator: 'on', value: ['DASHBOARDS'], percent: 80, completed: 10, dropped: 90, }
-                ]
-            }
-        }
-    ],
+    fetchError(errorId: any): Promise<any> {
+        return new Promise((resolve, reject) => {
+            errorService.one(errorId).then((error: any) => {
+                resolve(new Error().fromJSON(error))
+            }).catch((error: any) => {
+                toast.error('Failed to fetch error details.')
+                reject(error)
+            })
+        })
+    }
 }

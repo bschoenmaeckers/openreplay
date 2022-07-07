@@ -11,6 +11,8 @@ interface Props {
   addFilterByKeyAndValue: (key: string, value: string) => void;
   filterList: any;
   filterListLive: any;
+  filterSearchListLive: any;
+  filterSearchList: any;
 }
 function SessionSearchField(props: Props) {
   const debounceFetchFilterSearch = React.useCallback(debounce(props.fetchFilterSearch, 1000), []);
@@ -37,6 +39,7 @@ function SessionSearchField(props: Props) {
         id="search"
         type="search"
         autoComplete="off"
+        className="hover:border-gray-medium"
       />
 
       { showModal && (
@@ -45,7 +48,9 @@ function SessionSearchField(props: Props) {
             searchQuery={searchQuery}
             isMainSearch={true}
             onFilterClick={onAddFilter}
-            filters={isRoute(ASSIST_ROUTE, window.location.pathname) ? props.filterListLive : props.filterList }
+            isLive={isRoute(ASSIST_ROUTE, window.location.pathname)}
+            // filters={isRoute(ASSIST_ROUTE, window.location.pathname) ? props.filterListLive : props.filterList }
+            // filterSearchList={isRoute(ASSIST_ROUTE, window.location.pathname) ? props.filterSearchListLive : props.filterSearchList }
           />
         </div>
       )}
@@ -54,6 +59,8 @@ function SessionSearchField(props: Props) {
 }
 
 export default connect((state: any) => ({
+  filterSearchList: state.getIn([ 'search', 'filterSearchList' ]),
+  filterSearchListLive: state.getIn([ 'liveSearch', 'filterSearchList' ]),
   filterList: state.getIn([ 'search', 'filterList' ]),
   filterListLive: state.getIn([ 'search', 'filterListLive' ]),
 }), {  })(SessionSearchField);

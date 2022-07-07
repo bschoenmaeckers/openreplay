@@ -135,13 +135,13 @@ def comment_assignment(projectId: int, sessionId: int, issueId: str, data: schem
 def events_search(projectId: int, q: str,
                   type: Union[schemas.FilterType, schemas.EventType,
                               schemas.PerformanceEventType, schemas.FetchFilterType,
-                              schemas.GraphqlFilterType] = None,
+                              schemas.GraphqlFilterType, str] = None,
                   key: str = None, source: str = None, live: bool = False,
                   context: schemas.CurrentContext = Depends(OR_context)):
     if len(q) == 0:
         return {"data": []}
     if live:
-        return assist.autocomplete(project_id=projectId, q=q, key=key)
+        return assist.autocomplete(project_id=projectId, q=q, key=type.value if type is not None else None)
     if type in [schemas.FetchFilterType._url]:
         type = schemas.EventType.request
     elif type in [schemas.GraphqlFilterType._name]:
@@ -573,7 +573,7 @@ def add_metadata(projectId: int, data: schemas.MetadataBasicSchema = Body(...),
 @app.put('/{projectId}/metadata/{index}', tags=["metadata"])
 def edit_metadata(projectId: int, index: int, data: schemas.MetadataBasicSchema = Body(...),
                   context: schemas.CurrentContext = Depends(OR_context)):
-    return metadata.edit(tenant_id=context.tenant_id, project_id=projectId, index=int(index),
+    return metadata.edit(tenant_id=context.tenant_id, project_id=projectId, index=index,
                          new_name=data.key)
 
 
@@ -853,7 +853,7 @@ def all_issue_types(context: schemas.CurrentContext = Depends(OR_context)):
 
 
 @app.get('/{projectId}/assist/sessions', tags=["assist"])
-def sessions_live(projectId: int, userId: str = None, context: schemas.CurrentContext = Depends(OR_context)):
+def get_sessions_live(projectId: int, userId: str = None, context: schemas.CurrentContext = Depends(OR_context)):
     data = assist.get_live_sessions_ws_user_id(projectId, user_id=userId)
     return {'data': data}
 
@@ -1147,6 +1147,16 @@ def update_saved_search(projectId: int, search_id: int, data: schemas.SavedSearc
 @app.delete('/{projectId}/saved_search/{search_id}', tags=["savedSearch"])
 def delete_saved_search(projectId: int, search_id: int, context: schemas.CurrentContext = Depends(OR_context)):
     return {"data": saved_search.delete(project_id=projectId, user_id=context.user_id, search_id=search_id)}
+
+
+@app.get('/limits', tags=['accounts'])
+def get_limits(context: schemas.CurrentContext = Depends(OR_context)):
+    return {
+        'data': {
+            "teamMember": -1,
+            "projects": -1,
+        }
+    }
 
 
 @public_app.get('/', tags=["health"])
