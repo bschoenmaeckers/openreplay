@@ -57,7 +57,7 @@ function AssistActions({
     }    
   }, [peerConnectionStatus]);
 
-  const addIncomeStream = (stream: MediaStream) => setIncomeStream((prev) => [...prev, stream]);
+  const addIncomeStream = (stream: MediaStream) => setIncomeStream([...incomeStream, stream]);
 
   function call() {
     RequestLocalStream().then(lStream => {

@@ -294,6 +294,7 @@ export default class Assist {
       
       if (this.callingState === CallingState.True) {
         call.on('stream', (stream) => {
+          console.log('could be new call')
           callUI?.addRemoteStream(stream)
           return call.answer(lStream.stream)
         })
