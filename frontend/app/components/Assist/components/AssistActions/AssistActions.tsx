@@ -14,10 +14,6 @@ import { toast } from 'react-toastify';
 import { confirm } from 'UI';
 import stl from './AassistActions.module.css';
 
-function onClose(stream) {
-    stream.getTracks().forEach((t) => t.stop());
-}
-
 function onReject() {
     toast.info(`Call was rejected.`);
 }
@@ -37,38 +33,44 @@ interface Props {
     isEnterprise: boolean;
 }
 
-function AssistActions({
+function AssistActions({ 
     toggleChatWindow,
-    userId,
-    calling,
-    annotating,
-    peerConnectionStatus,
-    remoteControlStatus,
-    hasPermission,
-    isEnterprise,
+    userId, 
+    calling, 
+    annotating, 
+    peerConnectionStatus, 
+    remoteControlStatus, 
+    hasPermission, 
+    isEnterprise 
 }: Props) {
-    const [incomeStream, setIncomeStream] = useState<MediaStream | null>(null);
-    const [localStream, setLocalStream] = useState<LocalStream | null>(null);
-    const [callObject, setCallObject] = useState<{ end: () => void } | null>(null);
+  const [ incomeStream, setIncomeStream ] = useState<MediaStream[] | null>(null);
+  const [ localStream, setLocalStream ] = useState<LocalStream | null>(null);
+  const [ callObject, setCallObject ] = useState<{ end: ()=>void } | null >(null);
 
-    useEffect(() => {
-        return callObject?.end();
-    }, []);
+  useEffect(() => {
+    return callObject?.end()
+  }, [])
 
-    useEffect(() => {
-        if (peerConnectionStatus == ConnectionStatus.Disconnected) {
-            toast.info(`Live session was closed.`);
-        }
-    }, [peerConnectionStatus]);
+  useEffect(() => {
+    if (peerConnectionStatus == ConnectionStatus.Disconnected) {
+      toast.info(`Live session was closed.`);
+    }    
+  }, [peerConnectionStatus]);
 
-    function call() {
-        RequestLocalStream()
-            .then((lStream) => {
-                setLocalStream(lStream);
-                setCallObject(callPeer(lStream, setIncomeStream, lStream.stop.bind(lStream), onReject, onError));
-            })
-            .catch(onError);
-    }
+  const addIncomeStream = (stream: MediaStream) => setIncomeStream((prev) => [...prev, stream]);
+
+  function call() {
+    RequestLocalStream().then(lStream => {
+      setLocalStream(lStream);
+      setCallObject(callPeer(
+        lStream,
+        addIncomeStream,
+        lStream.stop.bind(lStream),
+        onReject,
+        onError
+      ));
+    }).catch(onError)
+  }
 
     const confirmCall = async () => {
         if (
