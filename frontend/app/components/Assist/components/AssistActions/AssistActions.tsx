@@ -33,17 +33,8 @@ interface Props {
     isEnterprise: boolean;
 }
 
-function AssistActions({ 
-    toggleChatWindow,
-    userId, 
-    calling, 
-    annotating, 
-    peerConnectionStatus, 
-    remoteControlStatus, 
-    hasPermission, 
-    isEnterprise 
-}: Props) {
-  const [ incomeStream, setIncomeStream ] = useState<MediaStream[] | null>(null);
+function AssistActions({ toggleChatWindow, userId, calling, annotating, peerConnectionStatus, remoteControlStatus, hasPermission, isEnterprise }: Props) {
+  const [ incomeStream, setIncomeStream ] = useState<MediaStream[] | null>([]);
   const [ localStream, setLocalStream ] = useState<LocalStream | null>(null);
   const [ callObject, setCallObject ] = useState<{ end: ()=>void } | null >(null);
 
@@ -57,7 +48,7 @@ function AssistActions({
     }    
   }, [peerConnectionStatus]);
 
-  const addIncomeStream = (stream: MediaStream) => setIncomeStream([...incomeStream, stream]);
+  const addIncomeStream = (stream: MediaStream) => setIncomeStream(oldState => [...oldState, stream]);
 
   function call() {
     RequestLocalStream().then(lStream => {
