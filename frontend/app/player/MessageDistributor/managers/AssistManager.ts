@@ -451,23 +451,25 @@ export default class AssistManager {
 
       // TODO: in a proper way
       this.socket && this.socket.emit("_agent_name", store.getState().getIn([ 'user', 'account', 'name']))
-      
       const call = this.callConnection = peer.call(this.peerID, this.callArgs.localStream.stream)
+      
       this.callArgs.localStream.onVideoTrack(vTrack => {
         const sender = call.peerConnection.getSenders().find(s => s.track?.kind === "video")
         if (!sender) {
           console.warn("No video sender found")
           return
         }
-        //logger.log("sender found:", sender)
         sender.replaceTrack(vTrack)
       })
 
+      console.log(this.peerID, call, call.peerConnection)
+
       call.on('stream', stream => {
+        console.log('stream added')
         update({ calling: CallingState.OnCall })
         this.callArgs && this.callArgs.onStream(stream)
       });
-      //call.peerConnection.addEventListener("track", e => console.log('newtrack',e.track))
+      call.peerConnection.addEventListener("track", e => console.log('newtrack',e.track))
 
       call.on("close", this.onRemoteCallEnd)
       call.on("error", (e) => {
@@ -502,5 +504,3 @@ export default class AssistManager {
     }
   }
 }
-
-

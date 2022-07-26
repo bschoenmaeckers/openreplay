@@ -19,6 +19,7 @@ function onReject() {
 }
 
 function onError(e) {
+    console.log(e)
     toast.error(typeof e === 'string' ? e : e.message);
 }
 
